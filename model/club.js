@@ -29,7 +29,14 @@ const clubSchema = new mongoose.Schema({
     verified:{
         type:Boolean,
         default:false,
-    }
+    },
+    block:{
+        type:Boolean,
+        default:false,
+    },
+    images:[{
+        type:String,
+    }]
 },
 {timestamps:true})
 

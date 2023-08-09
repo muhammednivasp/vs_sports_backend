@@ -21,6 +21,7 @@ module.exports.clubAuthentication = async (req, res, next) => {
           success: false,
         });
       } else {
+        
         req.userId = decoded.userId;
         console.log(req.userId, "12id", decoded);
         next();

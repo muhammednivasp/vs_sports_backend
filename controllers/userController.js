@@ -5,6 +5,9 @@ const AnnounceModel = require('../model/announceTournament')
 const Tournament = require('../model/tournament')
 const Teams = require('../model/teams')
 const MatchesModal = require('../model/matches')
+const Tickets = require('../model/tickets')
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 
 const jwt = require("jsonwebtoken")
@@ -17,6 +20,7 @@ const { log } = require('console');
 const { Matches } = require('./clubController');
 const stripe = Stripe('sk_test_51NUpC6SHhgXv6TRctUlfjdoCbOpHJooAQ3GgH2mpIjZkyQssWGZtelYDEVOgSOABVTeFkqZnJi5vPcr8yGAHG1dv00wWCyDJou')
 require('dotenv').config();
+const { v4: uuidv4 } = require("uuid")
 
 
 const handleErrors = (err) => {
@@ -65,9 +69,8 @@ const handleErrors = (err) => {
 module.exports = {
   Signup: async (req, res) => {
     try {
-      console.log("ethiee")
+      // console.log("ethiee")
       const { password, name, email, phonenumber, isUser } = req.body;
-
       const userExist = await userModel.findOne({ email });
       if(userExist){ 
         if(userExist.isGoogle === false && userExist.verified === false){
@@ -130,18 +133,18 @@ module.exports = {
 
   Login: async (req, res) => {
     try {
-      console.log("ioiooioi")
+      // console.log("ioiooioi")
       const { password, email, isUser } = req.body;
-      console.log(req.body)
+      // console.log(req.body)
       let userExist
       if (isUser === 'user') {
-        console.log("ghgighi")
+        // console.log("ghgighi")
         userExist = await userModel.findOne({ email, isUser });
       } else if (isUser === 'club') {
         // console.log('jij')
         userExist = await clubModel.findOne({ email, isUser });
       }
-      console.log(userExist, "kikii")
+      // console.log(userExist, "kikii")
       if (!userExist) {
         if (isUser === 'user') {
           return res.status(400).send({ message: "User does not exist", success: false });
@@ -154,8 +157,10 @@ module.exports = {
         const isPasswordValid = await bcrypt.compare(password, userExist.password);
         if (!isPasswordValid) {
           return res.status(400).send({ message: "Incorrect password", success: false });
+        }else if(userExist.block===true){
+          return res.status(400).send({ message: "You are blocked", success: false });
         } else {
-          console.log("liuy")
+          // console.log("liuy")
           let token
           if (isUser === 'user') {
             if (!userExist.verified) {
@@ -181,12 +186,12 @@ module.exports = {
 
   Forgot: async (req, res) => {
     try {
-      console.log("ethiee")
+      // console.log("ethiee")
       const { email, isUser } = req.body;
-      console.log(req.body)
+      // console.log(req.body)
 
       const userExist = await userModel.findOne({ email });
-      console.log(userExist, "loploplp")
+      // console.log(userExist, "loploplp")
 
       if (!userExist) {
         return res.status(400).send({ message: "user does'nt exists", success: false });
@@ -217,15 +222,13 @@ module.exports = {
 
   VerifyForgotMail: async (req, res) => {
     try {
-      console.log("ividend ")
+      // console.log("ividend ")
       const { newpassword, token, userId } = req.body;
-      console.log(req.body, "bodyiiiii");
+      // console.log(req.body, "bodyiiiii");
       const user = await userModel.findOne({ _id: userId });
-
       if (!user) {
         return res.status(400).send({ message: "Invalid link" });
       }
-
       const verifyToken = await Token.findOne({
         userId: user._id,
         token: token,
@@ -264,9 +267,7 @@ module.exports = {
     try {
       // console.log(req.body)
       const { id, name, email, isUser, isGoogle } = req.body;
-
       const userExist = await userModel.findOne({ email });
-
       if (userExist) {
         // console.log("jijijij")
         return res.status(400).send({ message: "User already exists", success: false });
@@ -309,17 +310,12 @@ module.exports = {
 
   EditUserProfile: async (req, res) => {
     try {
-      console.log("edit user profile"),
-        console.log(req.body, "body")
+      // console.log("edit user profile"),
+        // console.log(req.body, "body")
       const { email, phonenumber, isUser, EmailId, name } = req.body;
-      console.log(req.body)
+      // console.log(req.body)
       const oldUser = await userModel.findOne({ email: EmailId });
-      // const user = await userModel.findOne({email});
-      // if (user && user._id.toString() !== oldUser._id.toString()) {
-      // return res.status(400).send({ message: "Email already exist", success: false });
-      //  }else{
-      // const userExist = await userModel.updateOne({ email:EmailId }, { $set: { email:email,phonenumber:phoneNumber,name:name} })
-      console.log("nan ethi")
+      // console.log("nan ethi")
 
       if (email !== EmailId) {
         console.log("nan ethi")
@@ -329,25 +325,19 @@ module.exports = {
         }
       }
       // console.log(oldUser._id)
-
       //node mailer
       const token = await new Token({
         userId: oldUser._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      console.log("nan ethi")
+      // console.log("nan ethi")
       const url = `${process.env.BASE_URL}user/${oldUser._id}/verifytoedit/${token.token}`;
       await sendEmail(email, "verify Email", url);
       res.status(201).send({
         message: "An email sent to your account, please verify",
         success: false
       });
-      // }
-      // console.log(userExist,"kjjjjjjjjjikii")
-      // if (userExist) {
-      // const userData = await userModel.findOne({email});
-      //     return res.status(200).send({userExist:userData,message: "Updated successfully", success: true });
-      // }
+     
     } catch (error) {
       const errors = handleErrors(error);
       return res.json({ errors, message: "Internal server error", success: false });
@@ -357,14 +347,12 @@ module.exports = {
   VerifyEditUserProfile: async (req, res) => {
     try {
       const { data, token, userid } = req.body
-      console.log("koikoikoi")
+      // console.log("koikoikoi")
       const user = await userModel.findOne({ _id: userid })
-      console.log(user)
-
+      // console.log(user)
       if (!user) {
         return res.status(400).send({ message: "Invalid link" })
       }
-
       const verifytoken = await Token.findOne({
         userId: user._id,
         token: token
@@ -373,22 +361,20 @@ module.exports = {
 
       await userModel.updateOne({ _id: user._id }, { isUser: data.isUser, email: data.email, name: data.name, phonenumber: data.phonenumber })
       const userExist = await userModel.findOne({ _id: user._id })
-      console.log(userExist, "exist")
+      // console.log(userExist, "exist")
       await verifytoken.deleteOne()
-
       res.status(200).send({ userExist, message: "Email Verified Successfully", success: true })
 
     } catch (error) {
       return res.json({ error, message: "Internal server error", success: false });
-
     }
   },
 
   EditPassword: async (req, res) => {
     try {
-      console.log("ioiooioi")
+      // console.log("ioiooioi")
       const { Password, NewPassword, PasswordConform, isUser, EmailId } = req.body;
-      console.log(req.body)
+      // console.log(req.body)
       let userExist = await userModel.findOne({ email: EmailId, isUser });
       if (userExist) {
         const isPasswordValid = await bcrypt.compare(Password, userExist.password);
@@ -398,8 +384,7 @@ module.exports = {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(NewPassword, salt);
         const user = await userModel.updateOne({ email: EmailId }, { $set: { password: hashedPassword } })
-
-        console.log(user, "kjjjjjjjjjikii")
+        // console.log(user, "kjjjjjjjjjikii")
         if (user) {
           return res.status(200).send({ message: "Updated successfully", success: true });
         }
@@ -413,7 +398,7 @@ module.exports = {
   GetAnnounced:async(req,res)=>{
     try {
       const details = await AnnounceModel.find({}).sort({ lastdate: -1 })
-      console.log(details,"dtdtdttd")
+      // console.log(details,"dtdtdttd")
       if (details) {
         res.status(200).json({ details, message: "Tournament announced ",success: true });
     } 
@@ -428,7 +413,7 @@ module.exports = {
     try {
       // const { clubId } = req.body
       // console.log(req.body);
-      console.log("ethiyooooopopopoo");
+      // console.log("ethiyooooopopopoo");
       const details = await Tournament.find({}).populate("club")
       // console.log(details,"ffggfgfgfg")
       if (details) {
@@ -438,16 +423,16 @@ module.exports = {
       }
     } catch (error) {
       const errors = handleErrors(error);
-      console.log(error)
+      // console.log(error)
       return res.json({ errors, message: "Internal server error", success: false });
     }
   },
 
   ClubShow:async(req,res)=>{
     try {
-    console.log("ethi");
+    // console.log("ethi");
     const details = await clubModel.find({})
-    console.log(details,"ffggfgfgfg")
+    // console.log(details,"ffggfgfgfg")
     if (details) {
       res.status(200).json({ details, message: "club show successfully",success: true  });
     } else {
@@ -455,13 +440,13 @@ module.exports = {
     }
   } catch (error) {
     const errors = handleErrors(error);
-    console.log(error)
+    // console.log(error)
     return res.json({ errors, message: "Internal server error", success: false });
   }
   },
 
   PaymentLink: async (req, res) => {
-    console.log('llldfdsffewfefewfwewer12344');
+    // console.log('llldfdsffewfefewfwewer12344');
     try {
       const {
       clubname,
@@ -473,38 +458,25 @@ module.exports = {
       userId
     
       } = req.body
-      console.log(req.body,"klklk;kl");
+      // console.log(req.body,"klklk;kl");
         let value = req.body
         // const {orderId} = req.params;
-       
-       console.log('ethiy0')
-        
+      //  console.log('ethiy0')
         const order = await AnnounceModel.findById(announcementid).populate('club');
-        log(order,"orderlller")
+        // console.log(order,"orderlller")
         let amount = order.fee
         const datas =  { ...order, isUser : isUser }
         
         if (amount <= 0) {
-          console.log(value, "loploplopl");
-       
-          console.log(location, clubname, "hoihoi");
+          // console.log(value, "loploplopl");
+          // console.log(location, clubname, "hoihoi");
           try {
-            // const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
-            // console.log("created");
-            // const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
-            // const datas = { ...order, isUser : isUser };
-            // console.log(order, "jijijiji");
-            // console.log(datas, "klkoklkl");
-            // console.log(process.env.BASE_URL, "url");
            const url =  `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`
-           res.send({ url:url });
-          // return res.status(202).json({order});
-      
+           res.send({ url:url });      
           } catch (error) {
-            console.error(error);
+            // console.error(error);
             res.status(500).send("Error occurred");
           }
-
         }else{
         const session = await stripe.checkout.sessions.create({
             line_items: [
@@ -523,59 +495,200 @@ module.exports = {
             mode: 'payment',
 
             success_url:`${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`,
-            // cancel_url: `${process.env.BASE_URL}/user/failure`,
-            // cancel_url: (isUser === 'user' ? (`${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify(datas))}`))
             cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
 
-
         });
-        console.log(session,"llllllkkkkkklllllllllllll");
+        // console.log(session,"llllllkkkkkklllllllllllll");
         res.send({ url: session.url });
       }
     } catch (error) {
         console.log(error);
     }
-},
+ },
 
-Payment: async (req, res) => {
+ Payment: async (req, res) => {
   try {
-    console.log("hisisisi");
+    // console.log("hisisisi");
     const { value } = req.params;
-    console.log(value, 'valaa');
+    // console.log(value, 'valaa');
     const { clubname, location, phonenumber, registration, announcementid, isUser, userId, amount } = JSON.parse(value);
-    console.log(location, clubname, "hoihoi");
+    // console.log(location, clubname, "hoihoi");
     try {
       const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
-      console.log("created");
+      // console.log("created");
       const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
       const datas = { ...order, isUser : isUser };
-      console.log(order, "jijijiji");
-      console.log(datas, "dfdfdf");
+      // console.log(order, "jijijiji");
+      // console.log(datas, "dfdfdf");
 
       res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
 
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       res.status(500).send("Error occurred");
     }
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).send("Error occurred");
   }
-},
+ },
 
-TournamentMatches:async(req,res)=>{
+ TournamentMatches:async(req,res)=>{
   try {
-    console.log("gg");
-    console.log(req.body);
+    // console.log("gg");
+    // console.log(req.body);
     const {id} = req.body
     const details = await MatchesModal.find({tournament:id}).populate('firstteam').populate('secondteam')
-   console.log(details,"det");
+  //  console.log(details,"det");
 
    res.status(200).json({details, message: "Matches get successfully" });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).send("Error occurred");
   }
-}
+ },
+
+ TicketPayment:async(req,res)=>{
+  try {
+    const {
+      count,
+      match,
+    clubdatas,
+    isUser,
+    } = req.body
+    // console.log(req.body,"klklk;kl");
+      let value = req.body
+      // const {orderId} = req.params;
+    //  console.log('ethiy0')
+      const matchdata = await MatchesModal.findById({_id:match._id}).populate('firstteam').populate('secondteam')
+      // console.log(matchdata,"orderlller")
+      let amount = matchdata.ticketsfee
+      let available = matchdata.tickets
+      const datas =  { ...matchdata, isUser : isUser }
+      if(available<=0){
+          res.status(400).send("Ticket is not availble now")
+      }else if(available<count){
+        res.status(402).send("Only few tickets is availble now")
+      }else if (amount <= 0) {
+        // console.log(value, "loploplopl");
+        try {
+        
+         const url =  `${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`
+         res.send({ url:url });
+    
+        } catch (error) {
+          // console.error(error);
+          res.status(500).send("Error occurred");
+        }
+      }else{
+      const session = await stripe.checkout.sessions.create({
+          line_items: [
+              {
+                  price_data: {
+                      currency: 'inr',
+                      product_data: {
+                          name:'Vs Sports',
+                        
+                      },
+                      unit_amount: amount*100,
+                  },
+                  quantity:count,
+              },
+          ],
+          mode: 'payment',
+
+          success_url:`${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`,
+          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/ticketsfailure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/ticketsfailure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
+
+
+      });
+      // console.log(session,"llllllkkkkkklllllllllllll");
+      res.send({ url: session.url });
+    }
+  } catch (error) {
+      console.log(error);
+  }
+ },
+
+ PayTickets:async(req,res)=>{
+  try {
+    // console.log("hisisisi");
+    const { value } = req.params;
+    // console.log(value, 'valaa');
+    const { count, match, clubdatas, isUser} = JSON.parse(value);
+    // console.log(count,match,clubdatas,isUser,"fddfd");
+    // console.log(match,"dwd");
+
+    let ticketId = []
+    for(let i=0;i<count;i++){
+      const ticket = `ticket_${uuidv4()}`
+      ticketId.push(ticket)
+    }
+    //  console.log(ticketId,"lju");
+    try {
+      const newTicket = await Tickets.create({
+        isUser: isUser,
+        match: match._id,
+        userId: clubdatas.id,
+        tickets: ticketId.map(ticket => ({ no: ticket }))
+      });
+      
+      // console.log(newTicket,"created");
+      const matchdatas = await MatchesModal.findByIdAndUpdate(match._id, { $inc: { tickets: -count } }, { new: true }).populate('firstteam').populate('secondteam')
+      const datas = { ...matchdatas, isUser : isUser,newTicket:newTicket};
+      // console.log(matchdatas, "jijijiji");
+      // console.log(datas, "dfdfdf");
+      res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`))
+
+    } catch (error) {
+      // console.error(error);
+      res.status(500).send("Error occurred");
+    }
+  } catch (error) {
+    // console.error(error);
+    res.status(500).send("Error occurred");
+  }
+ },
+
+ TicketGet:async(req,res)=>{
+  try {
+    const datas = req.body
+    // console.log("dsd",datas,"kkkff");
+    const id=new ObjectId(datas.id)
+
+  const tickets = await Tickets.find({ userId: id })
+  .populate('userId')
+  .populate({
+    path: 'match',
+    model: 'matches',
+    populate: [
+      {
+        path: 'firstteam',
+        model: 'teams' 
+      },
+      {
+        path: 'secondteam',
+        model: 'teams'
+      },
+      {
+        path: 'tournament',
+        model: 'tournament',
+        populate: [
+          {
+            path:'club',
+            model: 'clubs',
+          }
+        ]
+      }
+    ]
+  });
+    // console.log(tickets,"jijijid")
+    // console.log("Populated tickets:", JSON.stringify(tickets, null, 2)); 
+   res.status(200).json({tickets, message: "tickets get successfully" });
+
+  } catch (error) {
+    // console.log(error);
+    res.status(500).send("Error occurred");
+  }
+ }
 }

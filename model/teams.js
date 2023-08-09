@@ -29,7 +29,7 @@ const teamSchema = new mongoose.Schema({
     userId:{
         type: mongoose.Schema.Types.ObjectId,
         ref:  function() {
-            return this.isUser === 'user' ? 'user' : 'club';
+            return this.isUser === 'user' ? 'users' : 'clubs';
         }
     },
     amount:{

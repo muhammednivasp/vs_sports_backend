@@ -33,6 +33,10 @@ const tournamentSchema = new mongoose.Schema({
     announcedid:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'announceTournament'
+    },
+    block:{
+        type:Boolean,
+        default:false
     }
 
 

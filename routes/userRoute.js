@@ -2,7 +2,8 @@
 // const express = require('express')
 // const router = express.Router()
 const router = require('express').Router()
-const { Signup, Login, GoogleSignup, GoogleLogin, EditUserProfile, EditPassword, VerifyMail, VerifyEditUserProfile, Forgot, VerifyForgotMail, GetAnnounced, TournamentShow ,ClubShow,PaymentLink,Payment,TournamentMatches} = require('../controllers/userController')
+const { Signup, Login, GoogleSignup, GoogleLogin, EditUserProfile, EditPassword, VerifyMail, VerifyEditUserProfile, Forgot, VerifyForgotMail, GetAnnounced, 
+    TournamentShow ,ClubShow,PaymentLink,Payment,TournamentMatches,TicketPayment,PayTickets,TicketGet} = require('../controllers/userController')
 const { userAuthentication } = require('../middleware/authMiddleware')
 
 // console.log(router)
@@ -27,9 +28,9 @@ router.get('/clubs', userAuthentication, ClubShow)
 router.post('/payment',userAuthentication, PaymentLink)
 router.get('/payment/:value', Payment)
 router.post('/tournamentmatches',userAuthentication, TournamentMatches)
-
-
-
+router.post('/ticketpayment',userAuthentication, TicketPayment)
+router.get('/paytickets/:value', PayTickets)
+router.post('/ticketget',userAuthentication,TicketGet)
 
 
 

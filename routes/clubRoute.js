@@ -1,8 +1,9 @@
 const router = require('express').Router()
-const { Login, GetAnnounced, TournamentShow ,ClubShow,PaymentLink,TournamentMatches} = require('../controllers/userController')
+const { Login, GetAnnounced, TournamentShow ,ClubShow,PaymentLink,TournamentMatches,TicketPayment,TicketGet} = require('../controllers/userController')
+const upload = require('../middleware/multer')
 const { ClubSignup, EditClub, ChangePassword, VerifyClubMail, VerifyEditProfile, Forgot, VerifyForgotMail, AnnounceTournament, Announced, 
     EditAnnounceTournament, AddNewTournament, Tournament, EditTournament ,Limit,Details,TeamManual,AnnounceToTournament,TeamGet,MatchPost,
-    Matches,EditMatchPost,ClubMatches,ScoreChange} = require('../controllers/clubController')
+    Matches,EditMatchPost,ClubMatches,ScoreChange,ClubCount,UploadImage,GetImages,ClubTicketGet,TicketStatus, Auth} = require('../controllers/clubController')
 const { clubAuthentication } = require('../middleware/clubAuthmiddleware')
 
 // console.log(router)
@@ -13,11 +14,8 @@ router.post('/clubforgot', Forgot)
 router.patch('/forgotpassword', VerifyForgotMail)
 
 
-
-
 router.patch('/editclubprofile', clubAuthentication, EditClub)
 router.patch('/verifyeditclubprofile', clubAuthentication, VerifyEditProfile)
-
 
 router.patch('/clubpassword', clubAuthentication, ChangePassword)
 router.post('/announcetournament', clubAuthentication, AnnounceTournament)
@@ -42,24 +40,14 @@ router.post('/matches', clubAuthentication, Matches)
 router.post('/clubmatches', clubAuthentication, ClubMatches)
 router.post('/tournamentmatches', clubAuthentication, TournamentMatches)
 router.post('/scorechange', clubAuthentication, ScoreChange)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+router.post('/count', clubAuthentication, ClubCount)
+router.post('/uploadimage',upload.array("images",4),UploadImage)
+router.post('/imagesget',GetImages)
+router.post('/ticketpayment',clubAuthentication,TicketPayment)
+router.post('/ticketget',clubAuthentication,TicketGet)
+router.post('/clubticketgets',clubAuthentication,ClubTicketGet)
+router.post('/ticketstatus',clubAuthentication,TicketStatus)
+router.post('/auth',Auth)
 
 
 

@@ -41,8 +41,17 @@ const matchSchema = new mongoose.Schema({
             type:String
         }]
     },
-    ticketstatus:{
-        type:Boolean
+    tickets:{
+        type:Number,
+        default:0
+    },
+    ticketsfee:{
+        type:Number,
+        default:0
+    },
+    block:{
+        type:Boolean,
+        default:false
     }
 },
 {timestamps:true})
