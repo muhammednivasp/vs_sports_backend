@@ -3,7 +3,7 @@
 // const router = express.Router()
 const router = require('express').Router()
 const { Signup, Login, GoogleSignup, GoogleLogin, EditUserProfile, EditPassword, VerifyMail, VerifyEditUserProfile, Forgot, VerifyForgotMail, GetAnnounced, 
-    TournamentShow ,ClubShow,PaymentLink,Payment,TournamentMatches,TicketPayment,PayTickets,TicketGet} = require('../controllers/userController')
+    TournamentShow ,ClubShow,PaymentLink,Payment,TournamentMatches,TicketPayment,PayTickets,TicketGet,Upcoming} = require('../controllers/userController')
 const { userAuthentication } = require('../middleware/authMiddleware')
 
 // console.log(router)
@@ -31,6 +31,7 @@ router.post('/tournamentmatches',userAuthentication, TournamentMatches)
 router.post('/ticketpayment',userAuthentication, TicketPayment)
 router.get('/paytickets/:value', PayTickets)
 router.post('/ticketget',userAuthentication,TicketGet)
+router.get('/upcomingmatches',userAuthentication,Upcoming)
 
 
 

@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const { Login, GetAnnounced, TournamentShow ,ClubShow,PaymentLink,TournamentMatches,TicketPayment,TicketGet} = require('../controllers/userController')
+const { Login, GetAnnounced, TournamentShow ,ClubShow,PaymentLink,TournamentMatches,TicketPayment,TicketGet,Upcoming} = require('../controllers/userController')
 const upload = require('../middleware/multer')
 const { ClubSignup, EditClub, ChangePassword, VerifyClubMail, VerifyEditProfile, Forgot, VerifyForgotMail, AnnounceTournament, Announced, 
     EditAnnounceTournament, AddNewTournament, Tournament, EditTournament ,Limit,Details,TeamManual,AnnounceToTournament,TeamGet,MatchPost,
@@ -47,6 +47,8 @@ router.post('/ticketpayment',clubAuthentication,TicketPayment)
 router.post('/ticketget',clubAuthentication,TicketGet)
 router.post('/clubticketgets',clubAuthentication,ClubTicketGet)
 router.post('/ticketstatus',clubAuthentication,TicketStatus)
+router.get('/upcoming',clubAuthentication,Upcoming)
+
 router.post('/auth',Auth)
 
 

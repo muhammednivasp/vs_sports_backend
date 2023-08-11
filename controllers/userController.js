@@ -690,5 +690,18 @@ module.exports = {
     // console.log(error);
     res.status(500).send("Error occurred");
   }
+ },
+
+ Upcoming:async(req,res)=>{
+  try {
+    console.log("fgsf");
+    const upcoming = await MatchesModal.find({}).populate('firstteam').populate('secondteam').populate('tournament').sort({date:1}).limit(5)
+    console.log(upcoming,"ggg");
+   res.status(200).json({upcoming, message: "Matches get successfully" });
+
+  } catch (error) {
+    res.status(500).send("Error occurred");
+    
+  }
  }
 }
