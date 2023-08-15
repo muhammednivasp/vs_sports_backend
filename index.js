@@ -19,7 +19,7 @@ app.listen(port, () => {
 });
 
 //database
-mongoose.connect(`mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`, {
+mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -32,7 +32,7 @@ mongoose.connect(`mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${proc
 
 app.use(
   cors({
-    origin: [`${process.env.BASE_URL}`],
+    origin: [`${process.env.BASE_URL}`,"https://vs-sports.netlify.app"],
     method: ["get", "post", "delete", "put", "patch"],
     credentials: true,
   })
