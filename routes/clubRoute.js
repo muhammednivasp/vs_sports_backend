@@ -3,7 +3,7 @@ const { Login, GetAnnounced, TournamentShow ,ClubShow,PaymentLink,TournamentMatc
 const upload = require('../middleware/multer')
 const { ClubSignup, EditClub, ChangePassword, VerifyClubMail, VerifyEditProfile, Forgot, VerifyForgotMail, AnnounceTournament, Announced, 
     EditAnnounceTournament, AddNewTournament, Tournament, EditTournament ,Limit,Details,TeamManual,AnnounceToTournament,TeamGet,MatchPost,
-    Matches,EditMatchPost,ClubMatches,ScoreChange,ClubCount,UploadImage,GetImages,ClubTicketGet,TicketStatus, Auth} = require('../controllers/clubController')
+    Matches,EditMatchPost,ClubMatches,ScoreChange,ClubCount,UploadImage,GetImages,ClubTicketGet,TicketStatus,AddResults, Auth} = require('../controllers/clubController')
 const { clubAuthentication } = require('../middleware/clubAuthmiddleware')
 
 // console.log(router)
@@ -48,13 +48,8 @@ router.post('/ticketget',clubAuthentication,TicketGet)
 router.post('/clubticketgets',clubAuthentication,ClubTicketGet)
 router.post('/ticketstatus',clubAuthentication,TicketStatus)
 router.get('/upcoming',clubAuthentication,Upcoming)
+router.patch('/addresultstournament', clubAuthentication,AddResults)
 
 router.post('/auth',Auth)
-
-
-
-
-
-
 
 module.exports = router

@@ -18,7 +18,7 @@ const crypto = require("crypto")
 const Stripe = require('stripe');
 const { log } = require('console');
 const { Matches } = require('./clubController');
-const stripe = Stripe('sk_test_51NUpC6SHhgXv6TRctUlfjdoCbOpHJooAQ3GgH2mpIjZkyQssWGZtelYDEVOgSOABVTeFkqZnJi5vPcr8yGAHG1dv00wWCyDJou')
+const stripe = Stripe(process.env.STRIPE_KEY)
 require('dotenv').config();
 const { v4: uuidv4 } = require("uuid")
 
@@ -69,38 +69,36 @@ const handleErrors = (err) => {
 module.exports = {
   Signup: async (req, res) => {
     try {
-      // console.log("ethiee")
       const { password, name, email, phonenumber, isUser } = req.body;
       const userExist = await userModel.findOne({ email });
-      if(userExist){ 
-        if(userExist.isGoogle === false && userExist.verified === false){
-        return res.status(400).send({ message: "Please verify your account", success: false });
+      if (userExist) {
+        if (userExist.isGoogle === false && userExist.verified === false) {
+          return res.status(400).send({ message: "Please verify your account", success: false });
 
-       }else {
-        return res.status(400).send({ message: "User already exists", success: false });
+        } else {
+          return res.status(400).send({ message: "User already exists", success: false });
+        }
+      } else {
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const newUser = await userModel.create({ name, email, phonenumber, password: hashedPassword, isUser }).then(console.log("user created"))
+
+        //node mailer
+        const token = await new Token({
+          userId: newUser._id,
+          token: crypto.randomBytes(32).toString("hex"),
+        }).save();
+        const url = `${process.env.BASE_URL}user/${newUser._id}/verify/${token.token}`;
+        await sendEmail(newUser.email, "verify Email", url);
+        res.status(201).json({
+          userId: newUser._id,
+          created: true,
+          message: "An email sent to your account, please verify",
+          success: true
+        });
       }
-     }else{
 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      const newUser = await userModel.create({ name, email, phonenumber, password: hashedPassword, isUser }).then(console.log("user created"))
-
-      //node mailer
-      const token = await new Token({
-        userId: newUser._id,
-        token: crypto.randomBytes(32).toString("hex"),
-      }).save();
-      const url = `${process.env.BASE_URL}user/${newUser._id}/verify/${token.token}`;
-      await sendEmail(newUser.email, "verify Email", url);
-      res.status(201).json({
-        userId: newUser._id,
-        created: true,
-        message: "An email sent to your account, please verify",
-        success: true
-      });
-    }
-
-      // return res.status(200).send({ message: "User created successfully", success: true });
     } catch (error) {
       const errors = handleErrors(error);
       return res.json({ errors, message: errors.email, success: false });
@@ -120,7 +118,7 @@ module.exports = {
       })
       if (!token) return res.status(400).send({ message: "Invalid link" })
 
-      await userModel.updateOne({_id: user._id},{ verified: true })
+      await userModel.updateOne({ _id: user._id }, { verified: true })
       await token.deleteOne()
 
       res.status(200).send({ message: "Email Verified Successfully" })
@@ -133,34 +131,28 @@ module.exports = {
 
   Login: async (req, res) => {
     try {
-      // console.log("ioiooioi")
       const { password, email, isUser } = req.body;
-      // console.log(req.body)
       let userExist
       if (isUser === 'user') {
-        // console.log("ghgighi")
         userExist = await userModel.findOne({ email, isUser });
       } else if (isUser === 'club') {
-        // console.log('jij')
         userExist = await clubModel.findOne({ email, isUser });
       }
-      // console.log(userExist, "kikii")
       if (!userExist) {
         if (isUser === 'user') {
           return res.status(400).send({ message: "User does not exist", success: false });
         } else {
           return res.status(400).send({ message: "Club does not exist", success: false });
         }
-      } else if(userExist.verified!==true){
+      } else if (userExist.verified !== true) {
         return res.status(400).send({ message: "Please verify your account ", success: false });
-      }else {
+      } else {
         const isPasswordValid = await bcrypt.compare(password, userExist.password);
         if (!isPasswordValid) {
           return res.status(400).send({ message: "Incorrect password", success: false });
-        }else if(userExist.block===true){
+        } else if (userExist.block === true) {
           return res.status(400).send({ message: "You are blocked", success: false });
         } else {
-          // console.log("liuy")
           let token
           if (isUser === 'user') {
             if (!userExist.verified) {
@@ -186,12 +178,9 @@ module.exports = {
 
   Forgot: async (req, res) => {
     try {
-      // console.log("ethiee")
       const { email, isUser } = req.body;
-      // console.log(req.body)
 
       const userExist = await userModel.findOne({ email });
-      // console.log(userExist, "loploplp")
 
       if (!userExist) {
         return res.status(400).send({ message: "user does'nt exists", success: false });
@@ -205,7 +194,7 @@ module.exports = {
         userId: userExist._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      const url = `${process.env.BASE_URL}user/${userExist._id}/forgotverify/${token.token}`;
+      const url = `${process.env.BASE_URL}/user/${userExist._id}/forgotverify/${token.token}`;
       await sendEmail(userExist.email, "verify Email", url);
       res.status(201).json({
         userId: userExist._id,
@@ -222,9 +211,7 @@ module.exports = {
 
   VerifyForgotMail: async (req, res) => {
     try {
-      // console.log("ividend ")
       const { newpassword, token, userId } = req.body;
-      // console.log(req.body, "bodyiiiii");
       const user = await userModel.findOne({ _id: userId });
       if (!user) {
         return res.status(400).send({ message: "Invalid link" });
@@ -265,14 +252,11 @@ module.exports = {
 
   GoogleSignup: async (req, res) => {
     try {
-      // console.log(req.body)
       const { id, name, email, isUser, isGoogle } = req.body;
       const userExist = await userModel.findOne({ email });
       if (userExist) {
-        // console.log("jijijij")
         return res.status(400).send({ message: "User already exists", success: false });
       }
-      //  console.log("hai")
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(id, salt);
       const newUser = await userModel.create({ name, email, password: hashedPassword, isUser, isGoogle });
@@ -287,12 +271,9 @@ module.exports = {
   GoogleLogin: async (req, res) => {
     try {
       const { id, email, isUser } = req.body;
-      // console.log(req.body)
       let userExist
       userExist = await userModel.findOne({ email, isUser, isGoogle: true });
-      //  console.log(userExist)
       if (!userExist) {
-        // console.log("jdjdjd");
         return res.status(400).send({ message: "User does not exist", success: false });
       }
       const isPasswordValid = await bcrypt.compare(id, userExist.password);
@@ -310,34 +291,27 @@ module.exports = {
 
   EditUserProfile: async (req, res) => {
     try {
-      // console.log("edit user profile"),
-        // console.log(req.body, "body")
       const { email, phonenumber, isUser, EmailId, name } = req.body;
-      // console.log(req.body)
       const oldUser = await userModel.findOne({ email: EmailId });
-      // console.log("nan ethi")
 
       if (email !== EmailId) {
-        console.log("nan ethi")
         const user = await userModel.findOne({ email });
         if (user) {
           return res.status(400).send({ message: "Email already exists", success: false });
         }
       }
-      // console.log(oldUser._id)
       //node mailer
       const token = await new Token({
         userId: oldUser._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      // console.log("nan ethi")
       const url = `${process.env.BASE_URL}user/${oldUser._id}/verifytoedit/${token.token}`;
       await sendEmail(email, "verify Email", url);
       res.status(201).send({
         message: "An email sent to your account, please verify",
         success: false
       });
-     
+
     } catch (error) {
       const errors = handleErrors(error);
       return res.json({ errors, message: "Internal server error", success: false });
@@ -347,9 +321,7 @@ module.exports = {
   VerifyEditUserProfile: async (req, res) => {
     try {
       const { data, token, userid } = req.body
-      // console.log("koikoikoi")
       const user = await userModel.findOne({ _id: userid })
-      // console.log(user)
       if (!user) {
         return res.status(400).send({ message: "Invalid link" })
       }
@@ -361,7 +333,6 @@ module.exports = {
 
       await userModel.updateOne({ _id: user._id }, { isUser: data.isUser, email: data.email, name: data.name, phonenumber: data.phonenumber })
       const userExist = await userModel.findOne({ _id: user._id })
-      // console.log(userExist, "exist")
       await verifytoken.deleteOne()
       res.status(200).send({ userExist, message: "Email Verified Successfully", success: true })
 
@@ -372,9 +343,7 @@ module.exports = {
 
   EditPassword: async (req, res) => {
     try {
-      // console.log("ioiooioi")
       const { Password, NewPassword, PasswordConform, isUser, EmailId } = req.body;
-      // console.log(req.body)
       let userExist = await userModel.findOne({ email: EmailId, isUser });
       if (userExist) {
         const isPasswordValid = await bcrypt.compare(Password, userExist.password);
@@ -384,7 +353,6 @@ module.exports = {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(NewPassword, salt);
         const user = await userModel.updateOne({ email: EmailId }, { $set: { password: hashedPassword } })
-        // console.log(user, "kjjjjjjjjjikii")
         if (user) {
           return res.status(200).send({ message: "Updated successfully", success: true });
         }
@@ -394,28 +362,80 @@ module.exports = {
       return res.json({ errors, message: "Internal server error", success: false });
     }
   },
-  
-  GetAnnounced:async(req,res)=>{
+
+  GetAnnounced: async (req, res) => {
     try {
-      const details = await AnnounceModel.find({}).sort({ lastdate: -1 })
-      // console.log(details,"dtdtdttd")
-      if (details) {
-        res.status(200).json({ details, message: "Tournament announced ",success: true });
-    } 
-  }catch (error) {
-     const errors = handleErrors(error);
-      return res.status(400).json({ errors, message: "Internal server error", success: false });
+      // const details = await AnnounceModel.find({}).sort({ lastdate: -1 })
+      const details = await AnnounceModel.aggregate([
+        {
+          $lookup: {
+            from: 'clubs', // Replace with the actual name of the club collection
+            localField: 'club',
+            foreignField: '_id',
+            as: 'clubData'
+          }
+        },
+        {
+          $unwind: '$clubData'
+        },
+        {
+          $match: {
+            'clubData.block': { $ne: true }
+          }
+        },
+        {
+          $sort: { lastdate: -1 }
+        }
+      ]);
       
+     
+      if (details) {
+        res.status(200).json({ details, message: "Tournament announced ", success: true });
+      }
+    } catch (error) {
+      const errors = handleErrors(error);
+      return res.status(400).json({ errors, message: "Internal server error", success: false });
+
     }
   },
 
-  TournamentShow:async(req,res)=>{
+  TournamentShow: async (req, res) => {
     try {
-      // const { clubId } = req.body
-      // console.log(req.body);
-      // console.log("ethiyooooopopopoo");
-      const details = await Tournament.find({}).populate("club")
-      // console.log(details,"ffggfgfgfg")
+
+      // const details = await Tournament.find({}).populate("club")
+      const details = await Tournament.aggregate([
+        {
+          $match: {
+            'block': { $ne: true }
+          }
+        },
+        {
+          $lookup: {
+            from: 'clubs', // Assuming the name of the club collection is 'clubs'
+            localField: 'club', // Field in Tournament collection
+            foreignField: '_id', // Field in Club collection
+            as: 'club'
+          }
+        },
+        {
+          $unwind: '$club'
+        },
+        {
+          $match: {
+            'club.block': { $ne: true }
+          }
+        },
+        {
+          $lookup: {
+            from: 'clubs', // Assuming the name of the club collection is 'clubs'
+            localField: 'club', // Field in Tournament collection
+            foreignField: '_id', // Field in Club collection
+            as: 'matchedClub'
+          }
+        }
+      ]);
+
+
       if (details) {
         res.status(200).json({ details, message: "Tournament show successfully" });
       } else {
@@ -423,285 +443,406 @@ module.exports = {
       }
     } catch (error) {
       const errors = handleErrors(error);
-      // console.log(error)
       return res.json({ errors, message: "Internal server error", success: false });
     }
   },
 
-  ClubShow:async(req,res)=>{
+  ClubShow: async (req, res) => {
     try {
-    // console.log("ethi");
-    const details = await clubModel.find({})
-    // console.log(details,"ffggfgfgfg")
-    if (details) {
-      res.status(200).json({ details, message: "club show successfully",success: true  });
-    } else {
-      res.status(400).json({ message: "No Clubs Found" ,success: false});
+      const details = await clubModel.find({ block: { $ne: true } })
+      if (details) {
+        res.status(200).json({ details, message: "club show successfully", success: true });
+      } else {
+        res.status(400).json({ message: "No Clubs Found", success: false });
+      }
+    } catch (error) {
+      const errors = handleErrors(error);
+      return res.json({ errors, message: "Internal server error", success: false });
     }
-  } catch (error) {
-    const errors = handleErrors(error);
-    // console.log(error)
-    return res.json({ errors, message: "Internal server error", success: false });
-  }
   },
 
   PaymentLink: async (req, res) => {
-    // console.log('llldfdsffewfefewfwewer12344');
     try {
       const {
-      clubname,
-      location,
-      phonenumber,
-      registration,
-      announcementid,
-      isUser,
-      userId
-    
+        clubname,
+        location,
+        phonenumber,
+        registration,
+        announcementid,
+        isUser,
+        userId
+
       } = req.body
-      // console.log(req.body,"klklk;kl");
-        let value = req.body
-        // const {orderId} = req.params;
-      //  console.log('ethiy0')
-        const order = await AnnounceModel.findById(announcementid).populate('club');
-        // console.log(order,"orderlller")
-        let amount = order.fee
-        const datas =  { ...order, isUser : isUser }
-        
-        if (amount <= 0) {
-          // console.log(value, "loploplopl");
-          // console.log(location, clubname, "hoihoi");
-          try {
-           const url =  `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`
-           res.send({ url:url });      
-          } catch (error) {
-            // console.error(error);
-            res.status(500).send("Error occurred");
-          }
-        }else{
-        const session = await stripe.checkout.sessions.create({
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'inr',
-                        product_data: {
-                            name:'Vs Sports',
-                          
-                        },
-                        unit_amount: amount*100,
-                    },
-                    quantity: 1,
-                },
-            ],
-            mode: 'payment',
-
-            success_url:`${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`,
-            cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
-
-        });
-        // console.log(session,"llllllkkkkkklllllllllllll");
-        res.send({ url: session.url });
-      }
-    } catch (error) {
-        console.log(error);
-    }
- },
-
- Payment: async (req, res) => {
-  try {
-    // console.log("hisisisi");
-    const { value } = req.params;
-    // console.log(value, 'valaa');
-    const { clubname, location, phonenumber, registration, announcementid, isUser, userId, amount } = JSON.parse(value);
-    // console.log(location, clubname, "hoihoi");
-    try {
-      const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
-      // console.log("created");
-      const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
-      const datas = { ...order, isUser : isUser };
-      // console.log(order, "jijijiji");
-      // console.log(datas, "dfdfdf");
-
-      res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
-
-    } catch (error) {
-      // console.error(error);
-      res.status(500).send("Error occurred");
-    }
-  } catch (error) {
-    // console.error(error);
-    res.status(500).send("Error occurred");
-  }
- },
-
- TournamentMatches:async(req,res)=>{
-  try {
-    // console.log("gg");
-    // console.log(req.body);
-    const {id} = req.body
-    const details = await MatchesModal.find({tournament:id}).populate('firstteam').populate('secondteam')
-  //  console.log(details,"det");
-
-   res.status(200).json({details, message: "Matches get successfully" });
-  } catch (error) {
-    // console.error(error);
-    res.status(500).send("Error occurred");
-  }
- },
-
- TicketPayment:async(req,res)=>{
-  try {
-    const {
-      count,
-      match,
-    clubdatas,
-    isUser,
-    } = req.body
-    // console.log(req.body,"klklk;kl");
       let value = req.body
-      // const {orderId} = req.params;
-    //  console.log('ethiy0')
-      const matchdata = await MatchesModal.findById({_id:match._id}).populate('firstteam').populate('secondteam')
-      // console.log(matchdata,"orderlller")
-      let amount = matchdata.ticketsfee
-      let available = matchdata.tickets
-      const datas =  { ...matchdata, isUser : isUser }
-      if(available<=0){
-          res.status(400).send("Ticket is not availble now")
-      }else if(available<count){
-        res.status(402).send("Only few tickets is availble now")
-      }else if (amount <= 0) {
-        // console.log(value, "loploplopl");
+      const order = await AnnounceModel.findById(announcementid).populate('club');
+      let amount = order.fee
+      const datas = { ...order, isUser: isUser }
+
+      if (amount <= 0) {
+       
         try {
-        
-         const url =  `${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`
-         res.send({ url:url });
-    
+          const url = `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`
+          res.send({ url: url });
         } catch (error) {
-          // console.error(error);
           res.status(500).send("Error occurred");
         }
-      }else{
-      const session = await stripe.checkout.sessions.create({
+      } else {
+        const session = await stripe.checkout.sessions.create({
           line_items: [
-              {
-                  price_data: {
-                      currency: 'inr',
-                      product_data: {
-                          name:'Vs Sports',
-                        
-                      },
-                      unit_amount: amount*100,
-                  },
-                  quantity:count,
+            {
+              price_data: {
+                currency: 'inr',
+                product_data: {
+                  name: 'Vs Sports',
+
+                },
+                unit_amount: amount * 100,
               },
+              quantity: 1,
+            },
           ],
           mode: 'payment',
 
-          success_url:`${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`,
+          success_url: `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`,
+          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
+
+        });
+        res.send({ url: session.url });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
+  Payment: async (req, res) => {
+    try {
+      const { value } = req.params;
+      const { clubname, location, phonenumber, registration, announcementid, isUser, userId, amount } = JSON.parse(value);
+      try {
+        const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
+        const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
+        const datas = { ...order, isUser: isUser };
+
+        res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
+
+      } catch (error) {
+        res.status(500).send("Error occurred");
+      }
+    } catch (error) {
+      res.status(500).send("Error occurred");
+    }
+  },
+
+  TournamentMatches: async (req, res) => {
+    try {
+      const { id } = req.body
+      const Id = new ObjectId(id)
+
+      // const details = await MatchesModal.find({tournament:id}).populate('firstteam').populate('secondteam')
+      const details = await MatchesModal.aggregate([
+        {
+          $match: {
+            'tournament': Id
+          }
+        }, {
+          $match: {
+            'block':{ $ne: true }
+          }
+        },
+        {
+          $lookup: {
+            from: 'tournaments', // Replace with the actual name of the tournament collection
+            localField: 'tournament',
+            foreignField: '_id',
+            as: 'tournament'
+          }
+        },
+        {
+          $unwind: '$tournament'
+        },
+        {
+          $lookup: {
+            from: 'clubs', // Replace with the actual name of the club collection
+            localField: 'tournament.club',
+            foreignField: '_id',
+            as: 'club'
+          }
+        },
+        {
+          $unwind: '$club'
+        },
+        {
+          $match: {
+            'club.block': { $ne: true }
+          }
+        },
+        {
+          $lookup: {
+            from: 'teams', // Replace with the actual name of the teams collection
+            localField: 'firstteam', // Assuming 'firstteam' is a reference to the team collection
+            foreignField: '_id',
+            as: 'firstteam'
+          }
+        },
+        {
+          $unwind: '$firstteam'
+        },
+        {
+          $lookup: {
+            from: 'teams', // Replace with the actual name of the teams collection
+            localField: 'secondteam', // Assuming 'secondteam' is a reference to the team collection
+            foreignField: '_id',
+            as: 'secondteam'
+          }
+        },
+        {
+          $unwind: '$secondteam'
+        }
+      ]);
+
+
+      res.status(200).json({ details, message: "Matches get successfully" });
+    } catch (error) {
+      res.status(500).send("Error occurred");
+    }
+  },
+
+  TicketPayment: async (req, res) => {
+    try {
+      const {
+        count,
+        match,
+        clubdatas,
+        isUser,
+      } = req.body
+      let value = req.body
+  
+      const matchdata = await MatchesModal.findById({ _id: match._id }).populate('firstteam').populate('secondteam')
+      let amount = matchdata.ticketsfee
+      let available = matchdata.tickets
+      const datas = { ...matchdata, isUser: isUser }
+      if (available <= 0) {
+        res.status(400).send("Ticket is not availble now")
+      } else if (available < count) {
+        res.status(402).send("Only few tickets is availble now")
+      } else if (amount <= 0) {
+        try {
+
+          const url = `${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`
+          res.send({ url: url });
+
+        } catch (error) {
+          res.status(500).send("Error occurred");
+        }
+      } else {
+        const session = await stripe.checkout.sessions.create({
+          line_items: [
+            {
+              price_data: {
+                currency: 'inr',
+                product_data: {
+                  name: 'Vs Sports',
+
+                },
+                unit_amount: amount * 100,
+              },
+              quantity: count,
+            },
+          ],
+          mode: 'payment',
+
+          success_url: `${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`,
           cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/ticketsfailure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/ticketsfailure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
 
 
-      });
-      // console.log(session,"llllllkkkkkklllllllllllll");
-      res.send({ url: session.url });
-    }
-  } catch (error) {
-      console.log(error);
-  }
- },
-
- PayTickets:async(req,res)=>{
-  try {
-    // console.log("hisisisi");
-    const { value } = req.params;
-    // console.log(value, 'valaa');
-    const { count, match, clubdatas, isUser} = JSON.parse(value);
-    // console.log(count,match,clubdatas,isUser,"fddfd");
-    // console.log(match,"dwd");
-
-    let ticketId = []
-    for(let i=0;i<count;i++){
-      const ticket = `ticket_${uuidv4()}`
-      ticketId.push(ticket)
-    }
-    //  console.log(ticketId,"lju");
-    try {
-      const newTicket = await Tickets.create({
-        isUser: isUser,
-        match: match._id,
-        userId: clubdatas.id,
-        tickets: ticketId.map(ticket => ({ no: ticket }))
-      });
-      
-      // console.log(newTicket,"created");
-      const matchdatas = await MatchesModal.findByIdAndUpdate(match._id, { $inc: { tickets: -count } }, { new: true }).populate('firstteam').populate('secondteam')
-      const datas = { ...matchdatas, isUser : isUser,newTicket:newTicket};
-      // console.log(matchdatas, "jijijiji");
-      // console.log(datas, "dfdfdf");
-      res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`))
-
+        });
+        res.send({ url: session.url });
+      }
     } catch (error) {
-      // console.error(error);
+      console.log(error);
+    }
+  },
+
+  PayTickets: async (req, res) => {
+    try {
+      const { value } = req.params;
+      const { count, match, clubdatas, isUser } = JSON.parse(value);
+
+      let ticketId = []
+      for (let i = 0; i < count; i++) {
+        const ticket = `ticket_${uuidv4()}`
+        ticketId.push(ticket)
+      }
+      try {
+        const newTicket = await Tickets.create({
+          isUser: isUser,
+          match: match._id,
+          userId: clubdatas.id,
+          tickets: ticketId.map(ticket => ({ no: ticket }))
+        });
+
+        const matchdatas = await MatchesModal.findByIdAndUpdate(match._id, { $inc: { tickets: -count } }, { new: true }).populate('firstteam').populate('secondteam')
+        const datas = { ...matchdatas, isUser: isUser, newTicket: newTicket };
+        res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`))
+
+      } catch (error) {
+        res.status(500).send("Error occurred");
+      }
+    } catch (error) {
       res.status(500).send("Error occurred");
     }
-  } catch (error) {
-    // console.error(error);
-    res.status(500).send("Error occurred");
-  }
- },
+  },
 
- TicketGet:async(req,res)=>{
-  try {
-    const datas = req.body
-    // console.log("dsd",datas,"kkkff");
-    const id=new ObjectId(datas.id)
+  TicketGet: async (req, res) => {
+    try {
+      const datas = req.body
+      const id = new ObjectId(datas.id)
 
-  const tickets = await Tickets.find({ userId: id })
-  .populate('userId')
-  .populate({
-    path: 'match',
-    model: 'matches',
-    populate: [
-      {
-        path: 'firstteam',
-        model: 'teams' 
-      },
-      {
-        path: 'secondteam',
-        model: 'teams'
-      },
-      {
-        path: 'tournament',
-        model: 'tournament',
-        populate: [
-          {
-            path:'club',
-            model: 'clubs',
+      const tickets = await Tickets.find({ userId: id })
+        .populate('userId')
+        .populate({
+          path: 'match',
+          model: 'matches',
+          populate: [
+            {
+              path: 'firstteam',
+              model: 'teams'
+            },
+            {
+              path: 'secondteam',
+              model: 'teams'
+            },
+            {
+              path: 'tournament',
+              model: 'tournament',
+              populate: [
+                {
+                  path: 'club',
+                  model: 'clubs',
+                }
+              ]
+            }
+          ]
+        });
+   
+      res.status(200).json({ tickets, message: "tickets get successfully" });
+
+    } catch (error) {
+      res.status(500).send("Error occurred");
+    }
+  },
+
+  Upcoming: async (req, res) => {
+    try {
+      const upcoming = await MatchesModal.aggregate([
+        {
+          $match: {
+            'block': { $ne: true }
           }
-        ]
+        },
+        {
+          $lookup: {
+            from: 'tournaments', // Replace with the actual name of the tournament collection
+            localField: 'tournament',
+            foreignField: '_id',
+            as: 'tournament'
+          }
+        },
+        {
+          $unwind: '$tournament'
+        },
+        {
+          $lookup: {
+            from: 'clubs', // Replace with the actual name of the club collection
+            localField: 'tournament.club',
+            foreignField: '_id',
+            as: 'club'
+          }
+        },
+        {
+          $unwind: '$club'
+        },
+        {
+          $match: {
+            'club.block': { $ne: true }
+          }
+        },
+        {
+          $lookup: {
+            from: 'teams', // Replace with the actual name of the teams collection
+            localField: 'firstteam', // Assuming 'firstteam' is a reference to the team collection
+            foreignField: '_id',
+            as: 'firstteam'
+          }
+        },
+        {
+          $unwind: '$firstteam'
+        },
+        {
+          $lookup: {
+            from: 'teams', // Replace with the actual name of the teams collection
+            localField: 'secondteam', // Assuming 'secondteam' is a reference to the team collection
+            foreignField: '_id',
+            as: 'secondteam'
+          }
+        },
+        {
+          $unwind: '$secondteam'
+        }
+      ]).sort({date:1}).limit(5)
+
+      // const upcoming = await MatchesModal.find({}).populate('firstteam').populate('secondteam').populate('tournament').sort({ date: 1 }).limit(5)
+      res.status(200).json({ upcoming, message: "Matches get successfully" });
+
+    } catch (error) {
+      res.status(500).send("Error occurred");
+
+    }
+  },
+
+  Auth: async (req, res) => {
+    try {
+      const token = req.headers["authorization"]?.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({
+          message: "User Authentication failed: Token not found",
+          success: false,
+        });
       }
-    ]
-  });
-    // console.log(tickets,"jijijid")
-    // console.log("Populated tickets:", JSON.stringify(tickets, null, 2)); 
-   res.status(200).json({tickets, message: "tickets get successfully" });
 
-  } catch (error) {
-    // console.log(error);
-    res.status(500).send("Error occurred");
+      const secretKey = process.env.JwtSecretKey;
+
+      jwt.verify(token, secretKey, (err, decoded) => {
+        if (err) {
+
+          return res.status(401).json({
+            message: "User Authentication failed: Invalid token",
+            success: false,
+          });
+        } else {
+          userModel.findById({ _id: decoded.userId }).then((response) => {
+
+            if (response.block) {
+              return res.status(401).json({
+                message: " Blocked",
+                success: false,
+              });
+            } else {
+              return res.status(200).json({
+                message: "User Authentication success",
+                success: true,
+              });
+            }
+          })
+
+        }
+      });
+    } catch (error) {
+      return res.status(401).json({
+        message: "User Authentication failed",
+        success: false,
+      });
+    }
   }
- },
 
- Upcoming:async(req,res)=>{
-  try {
-    console.log("fgsf");
-    const upcoming = await MatchesModal.find({}).populate('firstteam').populate('secondteam').populate('tournament').sort({date:1}).limit(5)
-    console.log(upcoming,"ggg");
-   res.status(200).json({upcoming, message: "Matches get successfully" });
-
-  } catch (error) {
-    res.status(500).send("Error occurred");
-    
-  }
- }
 }

@@ -6,10 +6,6 @@ const tournamentSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-    // clubid:{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'clubs',
-    // },
     location:{
         type:String,
         required:true
@@ -37,8 +33,13 @@ const tournamentSchema = new mongoose.Schema({
     block:{
         type:Boolean,
         default:false
+    },
+    winners:{
+        type:String
+    },
+    runners:{
+       type:String
     }
-
 
 },
 {timestamps:true})

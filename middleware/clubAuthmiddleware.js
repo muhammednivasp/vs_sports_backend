@@ -9,13 +9,9 @@ module.exports.clubAuthentication = async (req, res, next) => {
         success: false,
       });
     }
-
     const secretKey = process.env.JwtClubSecretKey;
-   //  console.log("Secret Key:", secretKey);
-
     jwt.verify(token, secretKey, (err, decoded) => {
       if (err) {
-      //   console.log("Error while verifying token:", err);
         return res.status(401).json({
           message: "Club Authentication failed: Invalid token",
           success: false,
@@ -23,12 +19,10 @@ module.exports.clubAuthentication = async (req, res, next) => {
       } else {
         
         req.userId = decoded.userId;
-        console.log(req.userId, "12id", decoded);
         next();
       }
     });
   } catch (error) {
-    console.log(error);
     return res.status(401).json({
       message: "Club Authentication failed",
       success: false,

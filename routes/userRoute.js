@@ -1,16 +1,12 @@
 
-// const express = require('express')
-// const router = express.Router()
 const router = require('express').Router()
 const { Signup, Login, GoogleSignup, GoogleLogin, EditUserProfile, EditPassword, VerifyMail, VerifyEditUserProfile, Forgot, VerifyForgotMail, GetAnnounced, 
-    TournamentShow ,ClubShow,PaymentLink,Payment,TournamentMatches,TicketPayment,PayTickets,TicketGet,Upcoming} = require('../controllers/userController')
+    TournamentShow ,ClubShow,PaymentLink,Payment,TournamentMatches,TicketPayment,PayTickets,TicketGet,Upcoming,Auth} = require('../controllers/userController')
 const { userAuthentication } = require('../middleware/authMiddleware')
 
-// console.log(router)
 router.post('/signup', Signup)
 router.get('/user/:id/verify/:token', VerifyMail)
 router.patch('/forgotpassword', VerifyForgotMail)
-
 
 router.post('/login', Login)
 router.post('/forgot', Forgot)
@@ -31,15 +27,7 @@ router.post('/tournamentmatches',userAuthentication, TournamentMatches)
 router.post('/ticketpayment',userAuthentication, TicketPayment)
 router.get('/paytickets/:value', PayTickets)
 router.post('/ticketget',userAuthentication,TicketGet)
-router.get('/upcomingmatches',userAuthentication,Upcoming)
+router.get('/upcoming',userAuthentication,Upcoming)
+router.post('/auth',Auth)
 
-
-
-
-
-
-
-
-
-// router.post('/signup',signup)
 module.exports = router

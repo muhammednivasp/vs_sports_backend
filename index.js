@@ -13,12 +13,10 @@ require('dotenv').config();
 
 const port = process.env.PORT || 4000;
 
-
 //port
 app.listen(port, () => {
   console.log(`Server started on port ${port}`);
 });
-
 
 //database
 mongoose.connect(`mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`, {
@@ -34,7 +32,6 @@ mongoose.connect(`mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${proc
 
 app.use(
   cors({
-    // origin: ["http://localhost:5173"],
     origin: [`${process.env.BASE_URL}`],
     method: ["get", "post", "delete", "put", "patch"],
     credentials: true,

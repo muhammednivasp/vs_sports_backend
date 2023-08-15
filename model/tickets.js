@@ -30,6 +30,5 @@ const ticketSchema = new mongoose.Schema({
 {timestamps:true})
 
   
-
 const ticketModel = mongoose.model('tickets',ticketSchema)
 module.exports = ticketModel

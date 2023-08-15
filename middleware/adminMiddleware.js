@@ -19,7 +19,6 @@ module.exports.adminAuthentication = (req, res, next) => {
             message: "Authentication failed: Token expired",
           });
         } else {
-          console.log(err);
           return res.status(401).json({
             success: false,
             message: "Authentication failed: Invalid token",
@@ -31,7 +30,6 @@ module.exports.adminAuthentication = (req, res, next) => {
       }
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
