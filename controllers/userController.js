@@ -504,7 +504,7 @@ module.exports = {
           mode: 'payment',
 
           success_url: `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`,
-          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
+          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify(value))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify(value))}`)
 
         });
         res.send({ url: session.url });
@@ -620,7 +620,6 @@ module.exports = {
           $unwind: '$secondteam'
         }
       ]);
-
 
       res.status(200).json({ details, message: "Matches get successfully" });
     } catch (error) {
