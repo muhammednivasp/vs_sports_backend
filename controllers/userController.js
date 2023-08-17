@@ -504,7 +504,7 @@ module.exports = {
           mode: 'payment',
 
           success_url: `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`,
-          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify(value))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify(value))}`)
+          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify(order))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify(order))}`)
 
         });
         res.send({ url: session.url });
