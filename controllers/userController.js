@@ -521,7 +521,28 @@ module.exports = {
       try {
         const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
         const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
-        const datas = { ...order, isUser: isUser };
+        const details = await AnnounceModel.aggregate([
+          {
+            $lookup: {
+              from: 'clubs', // Replace with the actual name of the club collection
+              localField: 'club',
+              foreignField: '_id',
+              as: 'clubData'
+            }
+          },
+          {
+            $unwind: '$clubData'
+          },
+          {
+            $match: {
+              'clubData.block': { $ne: true }
+            }
+          },
+          {
+            $sort: { lastdate: -1 }
+          }
+        ]);
+        const datas = { ...details, isUser: isUser };
 
         res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
 
