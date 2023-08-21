@@ -80,7 +80,7 @@ module.exports = {
         userId: newClub._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      const url = `${process.env.BASE_URL}club/${newClub._id}/verify/${token.token}`;
+      const url = `${process.env.BASE_URL}/club/${newClub._id}/verify/${token.token}`;
       await sendEmail(newClub.email, "verify Email", url);
       return res.status(201).json({
         clubId: newClub._id,
@@ -133,7 +133,7 @@ module.exports = {
         userId: clubExist._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      const url = `${process.env.BASE_URL}club/${clubExist._id}/forgotverify/${token.token}`;
+      const url = `${process.env.BASE_URL}/club/${clubExist._id}/forgotverify/${token.token}`;
       await sendEmail(clubExist.email, "verify Email", url);
       res.status(201).json({
         userId: clubExist._id,
@@ -207,7 +207,7 @@ module.exports = {
         userId: oldclub._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      const url = `${process.env.BASE_URL}club/${oldclub._id}/verifyclubtoedit/${token.token}`;
+      const url = `${process.env.BASE_URL}/club/${oldclub._id}/verifyclubtoedit/${token.token}`;
       await sendEmail(email, "verify Email", url);
       res.status(201).send({
         message: "An email sent to your account, please verify",

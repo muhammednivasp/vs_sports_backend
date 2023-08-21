@@ -89,7 +89,7 @@ module.exports = {
           userId: newUser._id,
           token: crypto.randomBytes(32).toString("hex"),
         }).save();
-        const url = `${process.env.BASE_URL}user/${newUser._id}/verify/${token.token}`;
+        const url = `${process.env.BASE_URL}/user/${newUser._id}/verify/${token.token}`;
         await sendEmail(newUser.email, "verify Email", url);
         res.status(201).json({
           userId: newUser._id,
@@ -305,7 +305,7 @@ module.exports = {
         userId: oldUser._id,
         token: crypto.randomBytes(32).toString("hex"),
       }).save();
-      const url = `${process.env.BASE_URL}user/${oldUser._id}/verifytoedit/${token.token}`;
+      const url = `${process.env.BASE_URL}/user/${oldUser._id}/verifytoedit/${token.token}`;
       await sendEmail(email, "verify Email", url);
       res.status(201).send({
         message: "An email sent to your account, please verify",
@@ -507,6 +507,7 @@ module.exports = {
           cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify(order))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify(order))}`)
 
         });
+        console.log(session,"session");
         res.send({ url: session.url });
       }
     } catch (error) {
