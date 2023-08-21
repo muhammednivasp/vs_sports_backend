@@ -508,6 +508,8 @@ module.exports = {
 
         });
         console.log(session,"session");
+        console.log(session.payment_status,"status of session");
+
         res.send({ url: session.url });
       }
     } catch (error) {
