@@ -548,7 +548,9 @@ module.exports = {
         ]);
         const datas = { ...details, isUser: isUser };
 
-      console.log("opppo",alldatas,"datasdsd",value,"kkkkjklkk",datas,"ffff");
+      // console.log("opppo",alldatas,"datasdsd",value,"kkkkjklkk",datas,"ffff");
+      console.log("opppo",alldatas,"datasdsd");
+
         res.status(202).send({order:datas});
 
         // res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
