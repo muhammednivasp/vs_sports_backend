@@ -521,6 +521,7 @@ module.exports = {
     try {
       const { value } = req.params;
       const { clubname, location, phonenumber, registration, announcementid, isUser, userId, amount } = JSON.parse(value);
+      const alldatas = JSON.parse(value);
       try {
         const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
         const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
@@ -547,7 +548,7 @@ module.exports = {
         ]);
         const datas = { ...details, isUser: isUser };
 
-      console.log(datas,"datasdsd");
+      console.log("opppo",alldatas,"datasdsd",value,"kkkkjklkk",datas,"ffff");
         res.status(202).send({order:datas});
 
         // res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
