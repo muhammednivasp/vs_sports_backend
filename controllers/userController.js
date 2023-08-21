@@ -510,7 +510,7 @@ module.exports = {
         console.log(session,"session");
         console.log(session.payment_status,"status of session");
 
-        res.send({ url: session.url });
+        res.send({ url: session.url ,status:session.payment_status,order:order});
       }
     } catch (error) {
       console.log(error);
@@ -547,7 +547,10 @@ module.exports = {
         ]);
         const datas = { ...details, isUser: isUser };
 
-        res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
+      console.log(datas,"datasdsd");
+        res.status(202).send({order:datas});
+
+        // res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
 
       } catch (error) {
         res.status(500).send("Error occurred");
