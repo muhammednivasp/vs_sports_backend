@@ -15,7 +15,7 @@ const bcrypt = require('bcrypt');
 const { log } = require('console');
 const matchModel = require('../model/matches');
 const Image = require('../model/imagefile')
-const { MultiUploadCloudinary  } = require('../utils/Cloudinery')
+const { MultiUploadCloudinary } = require('../utils/Cloudinery')
 
 const handleErrors = (err) => {
   let errors = { email: "", name: "", phonenumber: "", password: "" };
@@ -128,7 +128,7 @@ module.exports = {
         return res.status(400).send({ message: "user does'nt exists", success: false });
 
       }
-      
+
       const token = await new Token({
         userId: clubExist._id,
         token: crypto.randomBytes(32).toString("hex"),
@@ -193,7 +193,7 @@ module.exports = {
 
   EditClub: async (req, res) => {
     try {
-    
+
       const { email, clubRegisterNo, isUser, location, EmailId, name } = req.body;
       const oldclub = await clubModel.findOne({ email: EmailId });
 
@@ -314,14 +314,14 @@ module.exports = {
       const club = await clubModel.findOne({ email: EmailId })
       if (club) {
         const announce = await AnnounceModel.findOne({ _id: id })
-        if(announce.added===true){
+        if (announce.added === true) {
           const announceId = announce._id
           const tournament = await Tournament.updateOne(
             { announcedid: announceId },
             {
               tournamentname,
               location,
-              tournamenttype:category,
+              tournamenttype: category,
             }
           );
         }
@@ -373,7 +373,7 @@ module.exports = {
   Tournament: async (req, res) => {
     try {
       const { clubId } = req.body
-      const details = await Tournament.find({ club: clubId,block:{$ne:true}})
+      const details = await Tournament.find({ club: clubId, block: { $ne: true } })
       if (details) {
         res.status(200).json({ details, message: "Tournament show successfully" });
       } else {
@@ -387,26 +387,26 @@ module.exports = {
 
   EditTournament: async (req, res) => {
     try {
-      const { tournamentname, location, tournamenttype, status, EmailId, id ,announced} = req.body
+      const { tournamentname, location, tournamenttype, status, EmailId, id, announced } = req.body
       const club = await clubModel.findOne({ email: EmailId })
       if (club) {
         let tournament
-        if(announced === true){
-         tournament = await Tournament.findOne({ announcedid: id })
-        }else{
-         tournament = await Tournament.findOne({_id: id })
+        if (announced === true) {
+          tournament = await Tournament.findOne({ announcedid: id })
+        } else {
+          tournament = await Tournament.findOne({ _id: id })
         }
-          if(tournament?.announced===true){
-            const announceId = tournament.announcedid
-            const updateannounce = await AnnounceModel.findByIdAndUpdate(
-              { _id: announceId },
-              {
-                tournamentname,
-                location,
-                category:tournamenttype,
-              },{new:true}
-            );
-          }
+        if (tournament?.announced === true) {
+          const announceId = tournament.announcedid
+          const updateannounce = await AnnounceModel.findByIdAndUpdate(
+            { _id: announceId },
+            {
+              tournamentname,
+              location,
+              category: tournamenttype,
+            }, { new: true }
+          );
+        }
         const updated = await Tournament.findByIdAndUpdate(
           { _id: tournament.id },
           {
@@ -414,14 +414,14 @@ module.exports = {
             location,
             tournamenttype,
             status,
-          },{new:true}
+          }, { new: true }
         );
         let value
-        if(announced === true){
+        if (announced === true) {
           value = await Tournament.findOne({ announcedid: id })
-         }else{
-          value = await Tournament.findOne({_id: id })
-         }
+        } else {
+          value = await Tournament.findOne({ _id: id })
+        }
         if (updated) {
           res.status(200).json({ value, message: "Tournament updated successfully" });
         } else {
@@ -494,8 +494,8 @@ module.exports = {
       const { tournamentname, location, _id, category, club, added } = datasOf
       try {
         const add = await Tournament.create({ announcedid: _id, tournamentname, location, tournamenttype: category, club, announced: true })
-        const announce = await AnnounceModel.findByIdAndUpdate({ _id: _id }, { added: true },{new:true})
-        return res.status(200).json({announce, message: "Team added successfully" });
+        const announce = await AnnounceModel.findByIdAndUpdate({ _id: _id }, { added: true }, { new: true })
+        return res.status(200).json({ announce, message: "Team added successfully" });
       } catch (error) {
         res.status(500).send("Error occurred");
       }
@@ -506,59 +506,59 @@ module.exports = {
     }
   },
 
-  TeamGet:async(req,res)=>{
+  TeamGet: async (req, res) => {
     try {
-    const {_id,tournamentname,location,club,tournamenttype,status,announced,announcedid} = req.body
-    let teams =  (announced===true?
-    await Teams.find({ announcementid:announcedid })
-    : 
-    await Teams.find({ tournament:_id })
-    )
-   res.status(200).json({teams})
-      
+      const { _id, tournamentname, location, club, tournamenttype, status, announced, announcedid } = req.body
+      let teams = (announced === true ?
+        await Teams.find({ announcementid: announcedid })
+        :
+        await Teams.find({ tournament: _id })
+      )
+      res.status(200).json({ teams })
+
     } catch (error) {
       res.status(500).send("Error occurred");
 
     }
   },
 
-  MatchPost:async(req,res)=>{
+  MatchPost: async (req, res) => {
     try {
       const matchdata = req.body
-      const {matchnumber,date,time,firstteamid,secondteamid,matchstatus,tickets,ticketsfee,tournament,results}  = req.body
-      const finding = await Matches.findOne({matchnumber,tournament})
-      if(finding){
-        res.status(500).send({message:"Match Number Alreday Exists"})
-      }else{
-      const matchadd = await Matches.create({matchnumber,date,time,firstteam:firstteamid,secondteam:secondteamid,matchstatus,tickets,tournament,results,ticketsfee})
-      const details = await Matches.find({tournament}).populate('firstteam').populate('secondteam').populate('tournament')
-      res.status(200).json({details,message:"Match Edit successfully"})
+      const { matchnumber, date, time, firstteamid, secondteamid, matchstatus, tickets, ticketsfee, tournament, results } = req.body
+      const finding = await Matches.findOne({ matchnumber, tournament })
+      if (finding) {
+        res.status(500).send({ message: "Match Number Alreday Exists" })
+      } else {
+        const matchadd = await Matches.create({ matchnumber, date, time, firstteam: firstteamid, secondteam: secondteamid, matchstatus, tickets, tournament, results, ticketsfee })
+        const details = await Matches.find({ tournament }).populate('firstteam').populate('secondteam').populate('tournament')
+        res.status(200).json({ details, message: "Match Edit successfully" })
       }
     } catch (error) {
       res.status(500).send("Error occurred");
     }
   },
 
-  Matches:async(req,res)=>{
+  Matches: async (req, res) => {
     try {
-    const {_id} = req.body
-    const finding = await Matches.find({tournament:_id,block:{$ne:true}}).populate('firstteam').populate('secondteam').populate('tournament')
-    res.status(200).json({finding,message:"Matches get successfully"})
+      const { _id } = req.body
+      const finding = await Matches.find({ tournament: _id, block: { $ne: true } }).populate('firstteam').populate('secondteam').populate('tournament')
+      res.status(200).json({ finding, message: "Matches get successfully" })
 
-  } catch (error) {
-    res.status(500).send("Error occurred");
-  }
+    } catch (error) {
+      res.status(500).send("Error occurred");
+    }
   },
 
-  EditMatchPost:async(req,res)=>{
-      try {
+  EditMatchPost: async (req, res) => {
+    try {
       const matchdata = req.body
-      const {matchnumber,date,time,firstteamid,secondteamid,matchstatus,tickets,ticketsfee,tournament,results,id}  = req.body
-      const finding = await Matches.findOne({_id:id})
-      if(finding){
-      const matchadd = await Matches.updateOne({_id:id},{matchnumber,date,time,firstteam:firstteamid,secondteam:secondteamid,matchstatus,tickets,tournament,results,ticketsfee})
-      const details = await Matches.find({tournament}).populate('firstteam').populate('secondteam').populate('tournament')
-      res.status(200).json({details,message:"Match Edit successfully"})
+      const { matchnumber, date, time, firstteamid, secondteamid, matchstatus, tickets, ticketsfee, tournament, results, id } = req.body
+      const finding = await Matches.findOne({ _id: id })
+      if (finding) {
+        const matchadd = await Matches.updateOne({ _id: id }, { matchnumber, date, time, firstteam: firstteamid, secondteam: secondteamid, matchstatus, tickets, tournament, results, ticketsfee })
+        const details = await Matches.find({ tournament }).populate('firstteam').populate('secondteam').populate('tournament')
+        res.status(200).json({ details, message: "Match Edit successfully" })
       }
     } catch (error) {
       res.status(500).send("Error occurred");
@@ -630,39 +630,39 @@ module.exports = {
           },
         },
       ]);
-  
+
       res.status(200).json({ matches });
     } catch (error) {
       res.status(500).json({ error: "Error occurred" });
     }
   },
 
-  ScoreChange:async(req,res)=>{
+  ScoreChange: async (req, res) => {
     try {
-    const {id,score,scorers,team} = req.body
-    const updateObject = team === 'first'
-      ? { 'results.firstteamscore': score, 'results.firstteamscorers': scorers }
-      : { 'results.secondteamscore': score, 'results.secondteamscorers': scorers };
-    const matchResults = await Matches.findByIdAndUpdate({_id:id},updateObject,{new:true}).populate('firstteam').populate('secondteam').populate('tournament')
-    res.status(200).json({matchResults,message:"Score added successfully"})
+      const { id, score, scorers, team } = req.body
+      const updateObject = team === 'first'
+        ? { 'results.firstteamscore': score, 'results.firstteamscorers': scorers }
+        : { 'results.secondteamscore': score, 'results.secondteamscorers': scorers };
+      const matchResults = await Matches.findByIdAndUpdate({ _id: id }, updateObject, { new: true }).populate('firstteam').populate('secondteam').populate('tournament')
+      res.status(200).json({ matchResults, message: "Score added successfully" })
 
-  } catch (error) {
-    res.status(500).send("Error occurred");
-  }
+    } catch (error) {
+      res.status(500).send("Error occurred");
+    }
   },
 
-  ClubCount:async(req,res)=>{
+  ClubCount: async (req, res) => {
     try {
-      const {id,announce} = req.body;
+      const { id, announce } = req.body;
       const Id = new ObjectId(id);
-     
+
       let teams
-       if(announce===false){
-       teams = await Teams.find({tournament:Id ,block:{$ne:true}})
-       }else{
-       teams = await Teams.find({announcementid:Id,block:{$ne:true}})
-       }
-      res.json({teams,message:"success"});
+      if (announce === false) {
+        teams = await Teams.find({ tournament: Id, block: { $ne: true } })
+      } else {
+        teams = await Teams.find({ announcementid: Id, block: { $ne: true } })
+      }
+      res.json({ teams, message: "success" });
     } catch (error) {
       res.status(500).json({ error: 'An error occurred' });
     }
@@ -674,7 +674,7 @@ module.exports = {
       if (!mongoose.isValidObjectId(id)) {
         return res.status(400).json({ error: "Invalid club id." });
       }
-  
+
       const images = await MultiUploadCloudinary(req.files, "club");
       for (const item of images) {
         try {
@@ -687,58 +687,58 @@ module.exports = {
           return res.status(500).json({ error: "Error updating club." });
         }
       }
-  
+
       res.status(200).json({ message: "Images uploaded successfully." });
     } catch (error) {
       res.status(500).json({ error: "An error occurred while uploading images." });
     }
   },
 
-  GetImages:async(req,res) => {
+  GetImages: async (req, res) => {
     try {
-    const {id} = req.body
-    const clubimages = await clubModel.findOne({_id:id},{images:1,_id:0});
-    const images = clubimages.images
-    res.status(200).json({images,message: "Images get successfully." });
-  } catch (error) {
-    res.status(500).json({ error: "An error occurred while get images." });
-  }
+      const { id } = req.body
+      const clubimages = await clubModel.findOne({ _id: id }, { images: 1, _id: 0 });
+      const images = clubimages.images
+      res.status(200).json({ images, message: "Images get successfully." });
+    } catch (error) {
+      res.status(500).json({ error: "An error occurred while get images." });
+    }
   },
 
-  ClubTicketGet:async(req,res)=>{
+  ClubTicketGet: async (req, res) => {
     try {
-    const {item,clubdatas} = req.body
-      const id=new ObjectId(item._id)
+      const { item, clubdatas } = req.body
+      const id = new ObjectId(item._id)
 
-    const ticketsdata = await Tickets.find({ match:id})
-    .populate('userId')
-    .populate({
-      path: 'match',
-      model: 'matches',
-      populate: [
-        {
-          path: 'firstteam',
-          model: 'teams' 
-        },
-        {
-          path: 'secondteam',
-          model: 'teams'
-        },
-        {
-          path: 'tournament',
-          model: 'tournament',
+      const ticketsdata = await Tickets.find({ match: id })
+        .populate('userId')
+        .populate({
+          path: 'match',
+          model: 'matches',
           populate: [
             {
-              path:'club',
-              model: 'clubs',
+              path: 'firstteam',
+              model: 'teams'
+            },
+            {
+              path: 'secondteam',
+              model: 'teams'
+            },
+            {
+              path: 'tournament',
+              model: 'tournament',
+              populate: [
+                {
+                  path: 'club',
+                  model: 'clubs',
+                }
+              ]
             }
           ]
-        }
-      ]
-    });
-      
-     res.status(200).json({ticketsdata, message: "tickets get successfully" });
-  
+        });
+
+      res.status(200).json({ ticketsdata, message: "tickets get successfully" });
+
     } catch (error) {
       res.status(500).send("Error occurred");
     }
@@ -746,26 +746,26 @@ module.exports = {
 
   TicketStatus: async (req, res) => {
     try {
-    const {id} = req.body;
-      const ticket = await Tickets.findOne({'tickets._id':id});
+      const { id } = req.body;
+      const ticket = await Tickets.findOne({ 'tickets._id': id });
       if (!ticket) {
         return res.status(404).json({ success: false, message: "Ticket not found" });
       }
-  
-      const newStatus = !ticket.tickets.find(t => t._id.toString() === id).status; 
+
+      const newStatus = !ticket.tickets.find(t => t._id.toString() === id).status;
       const updatedTicket = await Tickets.findOneAndUpdate(
         { 'tickets._id': id },
         { $set: { 'tickets.$.status': newStatus } },
         { new: true }
       );
-  
-      res.status(200).json({ success: true, ticket: updatedTicket,message: "changed ticket status successfully"});
+
+      res.status(200).json({ success: true, ticket: updatedTicket, message: "changed ticket status successfully" });
     } catch (error) {
       res.status(500).json({ success: false, message: "Error updating ticket status" });
     }
   },
 
-  Auth:async(req,res)=>{
+  Auth: async (req, res) => {
     try {
       const token = req.headers["authorization"]?.split(" ")[1];
       if (!token) {
@@ -783,20 +783,20 @@ module.exports = {
             success: false,
           });
         } else {
-          clubModel.findById({_id:decoded.userId}).then((response)=>{
-            if(response.block){
+          clubModel.findById({ _id: decoded.userId }).then((response) => {
+            if (response.block) {
               return res.status(401).json({
                 message: " Blocked",
                 success: false,
               });
-            }else{
+            } else {
               return res.status(200).json({
                 message: "Club Authentication success",
                 success: true,
               });
             }
           })
-        
+
         }
       });
     } catch (error) {
@@ -807,40 +807,39 @@ module.exports = {
     }
   },
 
-  AddResults:async(req,res)=>{
+  AddResults: async (req, res) => {
     try {
-      const { winners, runners, tournamentId, announced, emailId} = req.body
+      const { winners, runners, tournamentId, announced, emailId } = req.body
       const club = await clubModel.findOne({ email: emailId })
       if (club) {
         let tournament
-        if(announced===true){
-         tournament = await Tournament.findOne({ announcedid:tournamentId })
-        }else{
-         tournament = await Tournament.findOne({ _id:tournamentId })
+        if (announced === true) {
+          tournament = await Tournament.findOne({ announcedid: tournamentId })
+        } else {
+          tournament = await Tournament.findOne({ _id: tournamentId })
         }
-        if(tournament){
-           
-        const value = await Tournament.findByIdAndUpdate(
-          { _id: tournament._id },
-          {
-            winners:winners,
-            runners:runners,
-          },{new:true}
-        );
-        if (value) {
-          res.status(200).json({ value, message: "Results updated successfully" });
+        if (tournament) {
+
+          const value = await Tournament.findByIdAndUpdate(
+            { _id: tournament._id },
+            {
+              winners: winners,
+              runners: runners,
+            }, { new: true }
+          );
+          if (value) {
+            res.status(200).json({ value, message: "Results updated successfully" });
+          } else {
+            res.status(400).json({ message: "Results update is error" });
+          }
         } else {
           res.status(400).json({ message: "Results update is error" });
         }
-      } else {
-        res.status(400).json({ message: "Results update is error" });
       }
-     }
     } catch (error) {
       const errors = handleErrors(error);
       return res.json({ errors, message: "Internal server error", success: false });
     }
   }
-  
-      
+
 }

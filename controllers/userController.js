@@ -365,7 +365,6 @@ module.exports = {
 
   GetAnnounced: async (req, res) => {
     try {
-      // const details = await AnnounceModel.find({}).sort({ lastdate: -1 })
       const details = await AnnounceModel.aggregate([
         {
           $lookup: {
@@ -387,8 +386,8 @@ module.exports = {
           $sort: { lastdate: -1 }
         }
       ]);
-      
-     
+
+
       if (details) {
         res.status(200).json({ details, message: "Tournament announced ", success: true });
       }
@@ -402,7 +401,6 @@ module.exports = {
   TournamentShow: async (req, res) => {
     try {
 
-      // const details = await Tournament.find({}).populate("club")
       const details = await Tournament.aggregate([
         {
           $match: {
@@ -478,54 +476,28 @@ module.exports = {
       let amount = order.fee
       const datas = { ...order, isUser: isUser }
 
-      if (amount <= 0) {
-       
-        try {
-          const url = `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`
-          res.send({ url: url });
-        } catch (error) {
-          res.status(500).send("Error occurred");
-        }
-      } else {
-        const session = await stripe.checkout.sessions.create({
-          line_items: [
-            {
-              price_data: {
-                currency: 'inr',
-                product_data: {
-                  name: 'Vs Sports',
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount * 100,
+        currency: "inr",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
 
-                },
-                unit_amount: amount * 100,
-              },
-              quantity: 1,
-            },
-          ],
-          mode: 'payment',
-
-          success_url: `${process.env.USER_API}/user/payment/${encodeURIComponent(JSON.stringify(value))}`,
-          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/failure?data=${encodeURIComponent(JSON.stringify(order))}` : `${process.env.BASE_URL}/club/failure?data=${encodeURIComponent(JSON.stringify(order))}`)
-
-        });
-        console.log(session,"session");
-        console.log(session.payment_status,"status of session");
-
-        res.send({ url: session.url ,status:session.payment_status,order:order});
-      }
     } catch (error) {
-      console.log(error);
+      console.log(error, "llldddddggg");
     }
   },
 
   Payment: async (req, res) => {
     try {
-      // const { value } = req.params;
-      // const { clubname, location, phonenumber, registration, announcementid, isUser, userId, amount } = JSON.parse(value);
       const { clubname, location, phonenumber, registration, announcementid, isUser, userId, amount } = req.body
-
-      // const alldatas = JSON.parse(value);
       try {
         const newTeam = await Teams.create({ teamname: clubname, location, phonenumber, registration, announcementid, userId, isUser, amount });
+
         const order = await AnnounceModel.findByIdAndUpdate(announcementid, { $inc: { teamsrequired: -1 } }, { new: true }).populate('club');
 
         const details = await AnnounceModel.aggregate([
@@ -550,13 +522,9 @@ module.exports = {
           }
         ]);
         const datas = { ...details, isUser: isUser };
+        const single = { ...order, isUser: isUser };
 
-      // console.log("opppo",alldatas,"datasdsd",value,"kkkkjklkk",datas,"ffff");
-      console.log("opppo",alldatas,"datasdsd");
-
-        res.status(202).send({order:alldatas});
-
-        // res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/successpage?data=${encodeURIComponent(JSON.stringify(datas))}`))
+        res.status(202).send({ datas: single });
 
       } catch (error) {
         res.status(500).send("Error occurred");
@@ -571,7 +539,6 @@ module.exports = {
       const { id } = req.body
       const Id = new ObjectId(id)
 
-      // const details = await MatchesModal.find({tournament:id}).populate('firstteam').populate('secondteam')
       const details = await MatchesModal.aggregate([
         {
           $match: {
@@ -579,7 +546,7 @@ module.exports = {
           }
         }, {
           $match: {
-            'block':{ $ne: true }
+            'block': { $ne: true }
           }
         },
         {
@@ -648,7 +615,7 @@ module.exports = {
         isUser,
       } = req.body
       let value = req.body
-  
+
       const matchdata = await MatchesModal.findById({ _id: match._id }).populate('firstteam').populate('secondteam')
       let amount = matchdata.ticketsfee
       let available = matchdata.tickets
@@ -657,48 +624,34 @@ module.exports = {
         res.status(400).send("Ticket is not availble now")
       } else if (available < count) {
         res.status(402).send("Only few tickets is availble now")
-      } else if (amount <= 0) {
-        try {
 
-          const url = `${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`
-          res.send({ url: url });
-
-        } catch (error) {
-          res.status(500).send("Error occurred");
-        }
       } else {
-        const session = await stripe.checkout.sessions.create({
-          line_items: [
-            {
-              price_data: {
-                currency: 'inr',
-                product_data: {
-                  name: 'Vs Sports',
 
-                },
-                unit_amount: amount * 100,
-              },
-              quantity: count,
-            },
-          ],
-          mode: 'payment',
-
-          success_url: `${process.env.USER_API}/user/paytickets/${encodeURIComponent(JSON.stringify(value))}`,
-          cancel_url: (isUser === 'user' ? `${process.env.BASE_URL}/user/ticketsfailure?data=${encodeURIComponent(JSON.stringify({ isUser }))}` : `${process.env.BASE_URL}/club/ticketsfailure?data=${encodeURIComponent(JSON.stringify({ isUser }))}`)
-
-
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount * 100,
+          currency: "inr",
+          automatic_payment_methods: {
+            enabled: true,
+          },
         });
-        res.send({ url: session.url });
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+
       }
     } catch (error) {
-      console.log(error);
+      res.status(500).send("Error occurred");
     }
   },
 
   PayTickets: async (req, res) => {
     try {
-      const { value } = req.params;
-      const { count, match, clubdatas, isUser } = JSON.parse(value);
+      const {
+        count,
+        match,
+        clubdatas,
+        isUser,
+      } = req.body
 
       let ticketId = []
       for (let i = 0; i < count; i++) {
@@ -715,7 +668,7 @@ module.exports = {
 
         const matchdatas = await MatchesModal.findByIdAndUpdate(match._id, { $inc: { tickets: -count } }, { new: true }).populate('firstteam').populate('secondteam')
         const datas = { ...matchdatas, isUser: isUser, newTicket: newTicket };
-        res.redirect(isUser === 'user' ? (`${process.env.BASE_URL}/user/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`) : (`${process.env.BASE_URL}/club/ticketsuccesspage?data=${encodeURIComponent(JSON.stringify(datas))}`))
+        res.status(202).send({ datas: datas });
 
       } catch (error) {
         res.status(500).send("Error occurred");
@@ -729,7 +682,6 @@ module.exports = {
     try {
       const datas = req.body
       const id = new ObjectId(datas.id)
-
       const tickets = await Tickets.find({ userId: id })
         .populate('userId')
         .populate({
@@ -756,7 +708,7 @@ module.exports = {
             }
           ]
         });
-   
+
       res.status(200).json({ tickets, message: "tickets get successfully" });
 
     } catch (error) {
@@ -821,9 +773,8 @@ module.exports = {
         {
           $unwind: '$secondteam'
         }
-      ]).sort({date:1}).limit(5)
+      ]).sort({ date: 1 }).limit(5)
 
-      // const upcoming = await MatchesModal.find({}).populate('firstteam').populate('secondteam').populate('tournament').sort({ date: 1 }).limit(5)
       res.status(200).json({ upcoming, message: "Matches get successfully" });
 
     } catch (error) {

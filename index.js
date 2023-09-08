@@ -29,10 +29,14 @@ mongoose.connect(process.env.MONGO_URL, {
   .catch((error) => {
     console.error('Error connecting to MongoDB:', error);
   });
+  console.log(process.env.BASE_URL);
+
 
 app.use(
+  
   cors({
-    origin: [`${process.env.BASE_URL}`,"https://vs-sports.netlify.app"],
+    // origin: [`${process.env.BASE_URL}`,"https://vs-sports.netlify.app","http://localhost:5173"],
+    origin: ["http://localhost:5173"],
     method: ["get", "post", "delete", "put", "patch"],
     credentials: true,
   })
